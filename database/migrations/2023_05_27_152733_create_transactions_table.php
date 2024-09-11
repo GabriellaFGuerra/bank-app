@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('transaction', function (Blueprint $table) {
+        Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->float('amount', 8, 2);
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('sender_id')->constrained(
+                table: 'users',
+                indexName: 'id'
+            );
             $table->foreignId('receiver_id')->constrained(
                 table: 'users',
                 indexName: 'id'
             );
-            $table->string('type');
             $table->timestamps();
         });
     }
@@ -29,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transaction');
+        Schema::dropIfExists('transactions');
     }
 };
