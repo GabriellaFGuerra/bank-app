@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Balance;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -33,17 +34,27 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'birthday' => ['required', 'date', 'before_or_equal:' . date('Y-m-d', strtotime('-18 years'))],
+            'cpf' => ['required', 'string', 'unique:'.User::class],
+            'address' => ['required', 'string', 'max:255']
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'birthday' => $request->birthday,
+            'cpf' => $request->cpf,
+            'address' => $request->address
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
+        Balance::create([
+            'value' => 0,
+            'user_id' => $user->id
+        ]);
 
         return redirect(route('dashboard', absolute: false));
     }
