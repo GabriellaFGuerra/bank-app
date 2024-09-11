@@ -12,9 +12,8 @@ class Transaction extends Model
 
     protected $fillable = [
         'amount',
-        'user_id',
+        'sender_id',
         'receiver_id',
-        'type',
     ];
 
     public function user(): BelongsTo {
