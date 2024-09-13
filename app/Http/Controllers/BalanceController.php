@@ -20,29 +20,21 @@ class BalanceController extends Controller
             return response()->json($balance);
         }
     }
-    public function dailyHistory(Request $request)
+
+    public function balanceHistory(Request $request)
     {
         $user = $request->user();
-        $date = $request->input('date', Carbon::today());
+        $date = $request->input('date');
 
-        // Fetch all transactions where the user is either the sender or receiver
-        $transactions = Transaction::where(function ($query) use ($user) {
-            $query->where('sender_id', $user->id)
-                ->orWhere('receiver_id', $user->id);
-        })
-            ->whereDate('created_at', $date)
-            ->get();
+        // Fetch the balance history for the given date
+        $balanceHistory = Balance::where('user_id', $user->id)
+            ->whereDate('date', $date)
+            ->first();
 
-        // Group transactions by type (deposit, transfer)
-        $groupedTransactions = $transactions->groupBy('type');
+        if (!$balanceHistory) {
+            return response()->json(['balance' => null], 200);
+        }
 
-        // Get current balance (optional: you can fetch it based on actual balance)
-        $currentBalance = $user->balance->value;
-
-        return response()->json([
-            'date' => $date,
-            'balance' => $currentBalance,
-            'transactions' => $groupedTransactions,
-        ]);
+        return response()->json(['balance' => $balanceHistory->value], 200);
     }
 }
