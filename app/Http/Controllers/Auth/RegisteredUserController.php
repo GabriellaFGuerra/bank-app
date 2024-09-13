@@ -53,7 +53,8 @@ class RegisteredUserController extends Controller
         Auth::login($user);
         Balance::create([
             'value' => 0,
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'date' => \Carbon\Carbon::today(),
         ]);
 
         return redirect(route('dashboard', absolute: false));
