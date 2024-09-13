@@ -14,6 +14,7 @@ class Transaction extends Model
         'amount',
         'sender_id',
         'receiver_id',
+        'type'
     ];
 
     public function user(): BelongsTo {

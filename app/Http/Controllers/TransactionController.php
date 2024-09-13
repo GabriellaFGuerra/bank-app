@@ -18,29 +18,58 @@ class TransactionController extends Controller
         return response()->json($transactions);
     }
 
+    public function create()
+    {
+        $users = User::all();
+        return view('transaction/create', compact('users'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'amount' => 'numeric',
-            'sender_id' => 'in:users,id|different:receiver_id',
-            'receiver_id' => 'in:users,id',
+            'amount' => 'required|numeric|min:0',
+            'sender_id' => 'required|exists:users,id',
+            'receiver_id' => 'required_if:type,transfer|exists:users,id',
+            'type' => 'required|in:deposit,transfer'
         ]);
 
-        $sender = User::where('id', $request->input('sender_id'))->first();
-        $receiver = User::where('id', $request->input('receiver_id'))->first();
+        $transaction = new Transaction();
+        $transaction->type = $request->input('type');
+        $transaction->amount = $request->input('amount');
+        $transaction->sender_id = $request->input('sender_id');
+        $transaction->receiver_id = $request->input('receiver_id');
+        $transaction->save();
 
-        if ($sender->balance->latest() < $request->input('amount')) {
-            return response()->json(['message' => 'Transaction failed, insufficient balance'], 400);
+        $sender = User::where('id', $transaction->sender_id)->firstOrFail();
+        $senderBalance = $sender->balance;
+
+        if ($transaction->type == 'transfer') {
+            // Ensure sender has enough balance
+            if ($senderBalance->value < $transaction->amount) {
+                return response()->json(['error' => 'Insufficient balance'], 400);
+            }
+
+            // Deduct from sender's balance
+            $senderBalance->value -= $transaction->amount;
+            $senderBalance->save();
+
+            // Add to receiver's balance
+            $receiver = User::where('id', $transaction->receiver_id)->firstOrFail();
+            $receiverBalance = $receiver->balance;
+            $receiverBalance->value += $transaction->amount;
+            $receiverBalance->save();
         } else {
-            $sender->balance->update($sender->balance->latest() - $request->input('amount'));
-            $receiver->balance->update($receiver->balance->latest() + $request->input('amount'));
-            $transaction = Transaction::create($request->all());
-            return response()->json($transaction);
+            // Deduct for deposit if required
+            $senderBalance->value += $transaction->amount;
+            $senderBalance->save();
         }
+
+        return response()->json(['transaction' => $transaction, 'balance' => $senderBalance]);
     }
+
 
     /**
      * Display the specified resource.
