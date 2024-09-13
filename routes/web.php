@@ -19,7 +19,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/balance', [BalanceController::class, 'index'])->name('balance.index');
+    Route::get('/balance/{date}', [BalanceController::class, 'dailyHistory'])->name('balance.daily');
     Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction.index');
+    Route::get('/transaction/new', [TransactionController::class, 'create'])->name('transaction.create');
     Route::post('/transaction', [TransactionController::class, 'store'])->name('transaction.store');
     Route::get('/transaction/{id}', [TransactionController::class, 'show'])->name('transaction.show');
 
