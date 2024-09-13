@@ -10,8 +10,9 @@ return new class extends Migration
     {
         Schema::create('balances', function (Blueprint $table) {
             $table->id();
-            $table->decimal('value', 8, 2);  // Use 'decimal' for better precision in financial data
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');  // Add 'onDelete' for proper cleanup
+            $table->decimal('value', 8, 2);
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->date('date');
             $table->timestamps();
         });
     }

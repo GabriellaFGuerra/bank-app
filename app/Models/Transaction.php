@@ -14,14 +14,22 @@ class Transaction extends Model
         'amount',
         'sender_id',
         'receiver_id',
-        'type'
+        'type',
+        'date'
     ];
 
-    public function user(): BelongsTo {
-        return $this->belongsTo(User::class);
+    protected $casts = [
+        'amount' => 'double',
+        'date' => 'date'
+    ];
+
+    public function sender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sender_id');
     }
 
-    public function receiver(): BelongsTo {
+    public function receiver(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'receiver_id');
     }
 }

@@ -13,6 +13,7 @@ class Balance extends Model
     protected $fillable = [
         'value',
         'user_id',
+        'date'
     ];
 
     public function user(): BelongsTo {
