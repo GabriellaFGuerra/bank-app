@@ -32,10 +32,12 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    // User can have many transactions
-    public function transactions(): HasMany
-    {
-        return $this->hasMany(Transaction::class);
+    public function sentTransactions() : HasMany {
+        return $this->hasMany(Transaction::class, 'sender_id');
+    }
+
+    public function receivedTransactions() : HasMany {
+        return $this->hasMany(Transaction::class, 'receiver_id');
     }
 
     // User has one balance
