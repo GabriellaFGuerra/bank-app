@@ -6,18 +6,13 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 
 class TransactionController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a form for creating a new resource.
      */
-    public function index()
-    {
-        $transactions = Transaction::where('sender_id', Auth::id())->get();
-        return response()->json($transactions);
-    }
-
     public function create()
     {
         $users = User::all();
@@ -33,7 +28,7 @@ class TransactionController extends Controller
             'amount' => 'required|numeric|min:0',
             'sender_id' => 'required|exists:users,id',
             'receiver_id' => 'required_if:type,transfer|exists:users,id',
-            'type' => 'required|in:deposit,transfer'
+            'type' => 'required|in:deposit,transfer,withdraw'
         ]);
 
         $transaction = new Transaction();
@@ -47,27 +42,39 @@ class TransactionController extends Controller
         $sender = User::where('id', $transaction->sender_id)->firstOrFail();
         $senderBalance = $sender->balance;
 
-        if ($transaction->type == 'transfer') {
-            // Ensure sender has enough balance
-            if ($senderBalance->value < $transaction->amount) {
-                return response()->json(['error' => 'Insufficient balance'], 400);
-            }
+        switch ($transaction->type) {
+            case 'transfer':
+                if ($senderBalance->value < $transaction->amount) {
+                    return response()->json(['error' => 'Insufficient balance'], 400);
+                }
 
-            // Deduct from sender's balance
-            $senderBalance->value -= $transaction->amount;
-            $senderBalance->save();
+                // Deduct from sender's balance
+                $senderBalance->value -= $transaction->amount;
+                $senderBalance->save();
 
-            // Add to receiver's balance
-            $receiver = User::where('id', $transaction->receiver_id)->firstOrFail();
-            $receiverBalance = $receiver->balance;
-            $receiverBalance->value += $transaction->amount;
-            $receiverBalance->save();
-        } else {
-            $senderBalance->value += $transaction->amount;
-            $senderBalance->save();
+                // Add to receiver's balance
+                $receiver = User::where('id', $transaction->receiver_id)->firstOrFail();
+                $receiverBalance = $receiver->balance;
+                $receiverBalance->value += $transaction->amount;
+                $receiverBalance->save();
+                break;
+
+            case 'deposit':
+                $senderBalance->value += $transaction->amount;
+                $senderBalance->save();
+                break;
+
+            case 'withdraw':
+                $senderBalance->value -= $transaction->amount;
+                $senderBalance->save();
+                break;
+
+            default:
+                return Redirect::back()->with('error', 'Invalid transaction type');
+                break;
         }
 
-        return response()->json(['transaction' => $transaction, 'balance' => $senderBalance]);
+        return Redirect('/dashboard');
     }
 
     public function transactionHistory(Request $request)
@@ -85,14 +92,5 @@ class TransactionController extends Controller
             ->get();
 
         return response()->json(['transactions' => $transactionHistory]);
-    }
-
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Transaction $transaction)
-    {
-        return response()->json($transaction);
     }
 }
