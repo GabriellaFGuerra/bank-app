@@ -41,6 +41,7 @@ class TransactionController extends Controller
         $transaction->amount = $request->input('amount');
         $transaction->sender_id = $request->input('sender_id');
         $transaction->receiver_id = $request->input('receiver_id');
+        $transaction->date = \Carbon\Carbon::today();
         $transaction->save();
 
         $sender = User::where('id', $transaction->sender_id)->firstOrFail();
@@ -62,12 +63,28 @@ class TransactionController extends Controller
             $receiverBalance->value += $transaction->amount;
             $receiverBalance->save();
         } else {
-            // Deduct for deposit if required
             $senderBalance->value += $transaction->amount;
             $senderBalance->save();
         }
 
         return response()->json(['transaction' => $transaction, 'balance' => $senderBalance]);
+    }
+
+    public function transactionHistory(Request $request)
+    {
+        $user = $request->user();
+        $date = $request->input('date');
+
+        // Fetch the transaction history for the given date
+        $transactionHistory = Transaction::where(function ($query) use ($user) {
+            $query->where('sender_id', $user->id)
+                ->orWhere('receiver_id', $user->id);
+        })
+            ->whereDate('date', $date)
+            ->with('sender', 'receiver')
+            ->get();
+
+        return response()->json(['transactions' => $transactionHistory]);
     }
 
 
