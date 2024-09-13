@@ -6,29 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->float('amount', 8, 2);
-            $table->foreignId('sender_id')->constrained(
-                table: 'users',
-                indexName: 'id'
-            );
-            $table->foreignId('receiver_id')->constrained(
-                table: 'users',
-                indexName: 'id'
-            );
+            $table->decimal('amount', 8, 2);  // Use 'decimal' instead of 'float'
+            $table->enum('type', ['deposit', 'transfer']);  // Use 'enum' for predefined values
+            $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('transactions');
