@@ -1,3 +1,4 @@
+
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 
@@ -15,6 +16,12 @@ export default {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
         },
+    },
+
+    variants: { // Add this section
+        extend: {
+            underline: ['hover'],
+        }
     },
 
     plugins: [forms],
