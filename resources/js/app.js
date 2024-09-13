@@ -1,4 +1,6 @@
+import '@fortawesome/fontawesome-free';
 import './bootstrap';
+
 
 import Alpine from 'alpinejs';
 
