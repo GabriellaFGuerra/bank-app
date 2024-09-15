@@ -48,11 +48,18 @@
                     <li><a href="#" class="text-gray-200 hover:text-blue-400">Contact</a></li>
                 </ul>
 
+
                 <div class="mt-4 space-x-4 lg:flex lg:ml-6 lg:mt-0">
-                    <a href="/login"
-                        class="px-6 py-3 text-white bg-blue-600 rounded-full border border-gray-200 hover:bg-blue-700">Login</a>
-                    <a href="/register"
-                        class="px-6 py-3 text-blue-600 rounded-full border border-blue-600 hover:bg-blue-600 hover:text-white">Register</a>
+                    @auth
+                        <a href="/logout"
+                            class="px-6 py-3 text-blue-600 rounded-full border border-blue-600 hover:bg-blue-600 hover:text-white">Logout</a>
+                    @endauth
+                    @guest
+                        <a href="/login"
+                            class="px-6 py-3 text-white bg-blue-600 rounded-full border border-gray-200 hover:bg-blue-700">Login</a>
+                        <a href="/register"
+                            class="px-6 py-3 text-blue-600 rounded-full border border-blue-600 hover:bg-blue-600 hover:text-white">Register</a>
+                    @endguest
                 </div>
             </nav>
         </div>
