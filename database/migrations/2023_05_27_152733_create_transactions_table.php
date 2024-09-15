@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->decimal('amount', 8, 2);
-            $table->enum('type', ['deposit', 'transfer']);
+            $table->enum('type', ['deposit', 'transfer', 'withdraw']);
             $table->date('date');
             $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
