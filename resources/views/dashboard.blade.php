@@ -1,57 +1,75 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-white leading-tight">
+        <h2 class="text-xl font-semibold leading-tight text-white">
             {{ __('Dashboard') }}
         </h2>
     </x-slot>
+
     <div class="py-12 bg-gray-900">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {{-- Display validation errors --}}
+        @if ($errors->any())
+            <div class="p-4 mb-4 text-red-700 bg-red-300 rounded-lg border-l-4 border-red-500 shadow-lg">
+                <div class="flex items-center">
+                    <i class="mr-2 text-red-500 fas fa-exclamation-circle"></i>
+                    <p class="text-lg font-semibold">Whoops! Something went wrong.</p>
+                </div>
+                <ul class="mt-2 ml-6 text-sm list-disc">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {{-- Account Balance Card --}}
-                <div class="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg p-6">
+                <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg">
                     <div class="flex items-center">
-                        <i class="fas fa-wallet text-white text-2xl mr-3"></i>
+                        <i class="mr-3 text-2xl text-white fas fa-wallet"></i>
                         <h3 class="text-lg font-semibold text-white">Account Balance</h3>
                     </div>
-                    <p class="text-3xl font-bold text-white mt-2">R$ {{ Auth::user()->balance->value }}</p>
+                    <p class="mt-2 text-3xl font-bold text-white">R$ {{ Auth::user()->balance->value }}</p>
                 </div>
+
                 {{-- Quick Actions Cards --}}
-                <div class="bg-gray-800 rounded-lg shadow-lg p-6 col-span-2 lg:col-span-1">
-                    <h3 class="text-lg font-semibold mb-4 text-white flex items-center">
-                        <i class="fas fa-bolt text-yellow-400 mr-2"></i> Quick Actions
+                <div class="col-span-2 p-6 bg-gray-800 rounded-lg shadow-lg lg:col-span-1">
+                    <h3 class="flex items-center mb-4 text-lg font-semibold text-white">
+                        <i class="mr-2 text-yellow-400 fas fa-bolt"></i> Quick Actions
                     </h3>
                     <div class="grid grid-cols-2 gap-4">
-                        <a href="{{ route('transaction.create') }}"
-                            class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 inline-flex items-center">
-                            <i class="fas fa-exchange-alt mr-2"></i>
+                        <a href="{{ route('transaction.create', ['type' => 'transfer']) }}"
+                            class="inline-flex items-center px-4 py-3 font-semibold text-white bg-green-500 rounded-lg transition duration-300 hover:bg-green-600">
+                            <i class="mr-2 fas fa-exchange-alt"></i>
                             Transfer
                         </a>
-                        <a href="{{ route('transaction.create') }}"
-                            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 inline-flex items-center">
-                            <i class="fas fa-plus-circle mr-2"></i>
+                        <a href="{{ route('transaction.create', ['type' => 'deposit']) }}"
+                            class="inline-flex items-center px-4 py-3 font-semibold text-white bg-blue-500 rounded-lg transition duration-300 hover:bg-blue-600">
+                            <i class="mr-2 fas fa-plus-circle"></i>
                             Deposit
                         </a>
-                        <a href="{{ route('transaction.create') }}"
-                            class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 inline-flex items-center">
-                            <i class="fas fa-minus-circle mr-2"></i>
+                        <a href="{{ route('transaction.create', ['type' => 'withdraw']) }}"
+                            class="inline-flex items-center px-4 py-3 font-semibold text-white bg-red-500 rounded-lg transition duration-300 hover:bg-red-600">
+                            <i class="mr-2 fas fa-minus-circle"></i>
                             Withdraw
                         </a>
                         <a href="{{ route('transaction.history') }}"
-                            class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 inline-flex items-center">
-                            <i class="fas fa-history mr-2"></i>
+                            class="inline-flex items-center px-4 py-3 font-semibold text-white bg-yellow-500 rounded-lg transition duration-300 hover:bg-yellow-600">
+                            <i class="mr-2 fas fa-history"></i>
                             History
                         </a>
                     </div>
                 </div>
+
                 {{-- Recent Transactions --}}
-                <div class="bg-gray-800 rounded-lg shadow-lg p-6 col-span-2 lg:col-span-2">
-                    <h3 class="text-lg font-bold mb-4 text-white flex items-center">
-                        <i class="fas fa-clock text-gray-400 mr-2"></i> Recent Transactions
+                <div class="col-span-2 p-6 bg-gray-800 rounded-lg shadow-lg lg:col-span-2">
+                    <h3 class="flex items-center mb-4 text-lg font-bold text-white">
+                        <i class="mr-2 text-gray-400 fas fa-clock"></i> Recent Transactions
                     </h3>
                     <div class="border-t border-gray-600">
                         <dl>
-                            @foreach (Auth::user()->sentTransactions->slice(0, 2) as $transaction)
-                                <div class="py-4 border-b border-gray-700 flex items-center">
+                            @forelse (Auth::user()->sentTransactions->sortByDesc('created_at')->take(2) as $transaction)
+                                <div class="flex items-center py-4 border-b border-gray-700">
                                     <div class="w-1/4">
                                         <dt class="text-sm font-medium text-gray-400">Type</dt>
                                         <dd class="mt-1 text-sm text-white">{{ Str::title($transaction->type) }}</dd>
@@ -62,10 +80,16 @@
                                     </div>
                                     <div class="w-1/2">
                                         <dt class="text-sm font-medium text-gray-400">Date</dt>
-                                        <dd class="mt-1 text-sm text-white">{{ \Carbon\Carbon::parse($transaction->date)->toDayDateTimeString() }}</dd>
+                                        <dd class="mt-1 text-sm text-white">
+                                            {{ \Carbon\Carbon::parse($transaction->date)->toDayDateTimeString() }}
+                                        </dd>
                                     </div>
                                 </div>
-                            @endforeach
+                            @empty
+                                <div class="py-4 text-sm text-gray-400">
+                                    No recent transactions available.
+                                </div>
+                            @endforelse
                         </dl>
                     </div>
                 </div>

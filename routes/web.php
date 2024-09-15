@@ -26,9 +26,8 @@ Route::middleware('auth')->group(function () {
         return view('transaction.history');
     })->name('transaction.history');
     Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction.index');
-    Route::get('/transaction/new', [TransactionController::class, 'create'])->name('transaction.create');
+    Route::get('/transaction/new/{type}', [TransactionController::class, 'create'])->name('transaction.create');
     Route::post('/transaction', [TransactionController::class, 'store'])->name('transaction.store');
-    Route::get('/transaction/{id}', [TransactionController::class, 'show'])->name('transaction.show');
 });
 Route::middleware('auth:sanctum')->get('/api/balance/history', [BalanceController::class, 'balanceHistory']);
 Route::middleware('auth:sanctum')->get('/api/transaction/history', [TransactionController::class, 'transactionHistory']);

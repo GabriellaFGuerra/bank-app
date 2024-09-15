@@ -5,25 +5,26 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Http\RedirectResponse;
 
 class TransactionController extends Controller
 {
     /**
      * Display a form for creating a new resource.
      */
-    public function create()
+    public function create(string $type)
     {
         $users = User::all();
-        return view('transaction/create', compact('users'));
+        return view('transaction/create', compact('users', 'type'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
+        // Validate the request
         $request->validate([
             'amount' => 'required|numeric|min:0',
             'sender_id' => 'required|exists:users,id',
@@ -31,51 +32,81 @@ class TransactionController extends Controller
             'type' => 'required|in:deposit,transfer,withdraw'
         ]);
 
-        $transaction = new Transaction();
-        $transaction->type = $request->input('type');
-        $transaction->amount = $request->input('amount');
-        $transaction->sender_id = $request->input('sender_id');
-        $transaction->receiver_id = $request->input('receiver_id');
-        $transaction->date = \Carbon\Carbon::today();
-        $transaction->save();
+        $sender = User::findOrFail($request->input('sender_id'));
+        $amount = $request->input('amount');
 
-        $sender = User::where('id', $transaction->sender_id)->firstOrFail();
-        $senderBalance = $sender->balance;
+        // Fetch the sender's balance (assuming a relation like hasOne or belongsTo)
+        $senderBalance = $sender->balance;  // Assuming User has a hasOne relationship with Balance
 
-        switch ($transaction->type) {
-            case 'transfer':
-                if ($senderBalance->value < $transaction->amount) {
-                    return response()->json(['error' => 'Insufficient balance'], 400);
-                }
-
-                // Deduct from sender's balance
-                $senderBalance->value -= $transaction->amount;
-                $senderBalance->save();
-
-                // Add to receiver's balance
-                $receiver = User::where('id', $transaction->receiver_id)->firstOrFail();
-                $receiverBalance = $receiver->balance;
-                $receiverBalance->value += $transaction->amount;
-                $receiverBalance->save();
-                break;
-
-            case 'deposit':
-                $senderBalance->value += $transaction->amount;
-                $senderBalance->save();
-                break;
-
-            case 'withdraw':
-                $senderBalance->value -= $transaction->amount;
-                $senderBalance->save();
-                break;
-
-            default:
-                return Redirect::back()->with('error', 'Invalid transaction type');
-                break;
+        if (!$senderBalance) {
+            return Redirect::back()->withErrors('Sender has no balance record.');
         }
 
-        return Redirect('/dashboard');
+        // Initialize a new transaction
+        $transaction = new Transaction();
+        $transaction->type = $request->input('type');
+        $transaction->amount = $amount;
+        $transaction->sender()->associate($sender);
+        $transaction->receiver_id = $request->input('receiver_id');
+        $transaction->date = \Carbon\Carbon::today();
+
+        try {
+            switch ($transaction->type) {
+                case 'transfer':
+                    $receiver = User::findOrFail($transaction->receiver_id);
+                    $receiverBalance = $receiver->balance;
+
+                    if (!$receiverBalance) {
+                        return Redirect::back()->withErrors('Receiver has no balance record.');
+                    }
+
+                    // Check if sender has sufficient balance
+                    if ($senderBalance->value < $amount) {
+                        return Redirect::back()->withErrors('Insufficient balance for transfer.');
+                    }
+
+                    // Update balances
+                    $senderBalance->value -= $amount;
+                    $receiverBalance->value += $amount;
+
+                    // Save both balances
+                    $senderBalance->save();
+                    $receiverBalance->save();
+
+                    // Save the transaction
+                    $transaction->save();
+                    break;
+
+                case 'deposit':
+                    $senderBalance->value += $amount;
+                    $senderBalance->save();
+                    $transaction->save();
+                    break;
+
+                case 'withdraw':
+                    // Check if sender has sufficient balance
+                    if ($senderBalance->value < $amount) {
+                        return Redirect::back()->withErrors('Insufficient balance for withdrawal.');
+                    }
+
+                    // Deduct the amount from the sender's balance
+                    $senderBalance->value -= $amount;
+                    $senderBalance->save();
+                    $transaction->save();
+                    break;
+
+                default:
+                    return Redirect::back()->withErrors('Invalid transaction type.');
+            }
+        } catch (\Exception $e) {
+            return Redirect::back()->withErrors($e->getMessage());
+        }
+
+        // Redirect to dashboard with success message
+        return Redirect::to('/dashboard')->with('success', 'Transaction successful!');
     }
+
+
 
     public function transactionHistory(Request $request)
     {
